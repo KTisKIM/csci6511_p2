@@ -1,48 +1,84 @@
-from KeuntaeKim_Project2 import read_input_file, gcd_list, heuristic_score, create_successors, a_star_search
-import numpy as np
+from KeuntaeKim_Project2 import *
 import unittest
 
 class KeuntaeKimProject2Testcases(unittest.TestCase):
-    def test_read_input_file(self):
-        filename = "P1_Option2_WaterPitcher/cat test_input1.txt"  # Different from the original cat input*.txt
-        pitchers, target_quantity = read_input_file(filename)
-        self.assertTrue(len(pitchers) > 0)
-        self.assertEqual(target_quantity, 7)
-        print("test_read_input_file --- PASSED")
+    def init_setup(self):
+        # Setup can include initializing landscapes, tiles, targets, etc., for testing purposes.
+        self.landscape = [[0, 0, 1, 0], [0, 2, 0, 3], [3, 0, 0, 0], [0, 4, 0, 0]]
+        self.tiles = {"FULL_BLOCK": 2, "OUTER_BOUNDARY": 2, "EL_SHAPE": 1}
+        self.targets = {1: 1, 2: 1, 3: 1, 4: 1}
+        self.position = (0, 0)
+        print("init_setup --- COMPLETED")
+    
+    def test_is_valid(self):
+        # Example test for is_valid
+        self.assertTrue(is_valid(self.landscape, "FULL_BLOCK", self.position, self.targets, self.tiles))
+        print("test_is_valid --- PASSED")
+    
+    def test_apply_tile(self):
+        # Before application
+        expected_before = 2
+        self.assertEqual(self.tiles["FULL_BLOCK"], expected_before)
+        print("test_apply_tile __ Before Application --- PASSED")
+        
+        # Apply tile
+        apply_tile(self.landscape, "FULL_BLOCK", self.position, self.tiles)
+        
+        # After application
+        expected_after = 1
+        self.assertEqual(self.tiles["FULL_BLOCK"], expected_after)
+        print("test_apply_tile __ After Application --- PASSED")
+    
+    def test_remove_tile(self):
+        # Assume a tile is applied
+        apply_tile(self.landscape, "FULL_BLOCK", self.position, self.tiles)
+        remove_tile(self.landscape, "FULL_BLOCK", self.position, self.tiles)
+        
+        # Check if the tile count is restored
+        expected_restore = 2
+        self.assertEqual(self.tiles["FULL_BLOCK"], expected_restore)
+        print("test_remove_tile --- PASSED")
+    
+    def test_ac3(self):
+        # This would test the AC3 function's ability to reduce domains correctly
+        # Setup a simple scenario where AC3 will modify the domains
+        self.landscape = [[1, 2, 0, 0], [0, 0, 3, 4], [0, 0, 0, 0], [0, 0, 0, 0]]
+        self.tiles = {"FULL_BLOCK": 1, "OUTER_BOUNDARY": 1, "EL_SHAPE": 1}
+        self.targets = {1: 1, 2: 1, 3: 1, 4: 1}
 
-    def test_gcd_list(self):
-        self.assertEqual(gcd_list([3, 6, 9]), 3)
-        self.assertEqual(gcd_list([4, 8, 12]), 4)
-        self.assertEqual(gcd_list([100, 300]), 100)
-        print("test_gcd_list --- PASSED")
+        # Define variables based on the simplified landscape
+        variables = [(0, 0), (0, 2)]
+        
+        # Simplified tile patterns for the purpose of testing
+        tile_patterns = {
+            "FULL_BLOCK": [(0, 0), (0, 1), (1, 0), (1, 1)],
+            "OUTER_BOUNDARY": [(0, 0), (0, 1), (1, 0), (2, 0), (0, 2), (1, 2), (2, 2), (2, 1)],
+            "EL_SHAPE": [(0, 0), (0, 1), (0, 2), (1, 0)]
+        }
 
-    def test_heuristic_score(self):
-        state = (0, 0)
-        pitchers = [3, 4, np.inf]
-        target_quantity = 7
-        self.assertTrue(heuristic_score(state, pitchers, target_quantity) >= 0)  # Heuristic score should be Positive!
-        print("test_heuristic_score --- PASSED")
+        # Initialize domains for each variable (position)
+        domains = {variable: list(tile_patterns.keys()) for variable in variables}
 
-    def test_create_successors(self):
-        state = (0, 0)
-        pitchers = [3, 4, np.inf]
-        successors = create_successors(state, pitchers)
-        self.assertEqual(set(successors), {(3, 0), (0, 4), (0, 0)})
-        print("test_create_successors --- PASSED")
+        # Simulate arcs for this scenario
+        arcs = initialize_arcs(variables)
 
-    def test_a_star_search_1(self):
-        pitchers = [3, 4, np.inf]
-        target_quantity = 7
-        steps = a_star_search(pitchers[:-1], target_quantity)  # Excluding the "infinite" pitcher for the A* Search.
-        self.assertEqual(steps, 4)  # Example path: Fill 3, Fill 2, Fill into "infinite" pitcher from both(+2).
-        print("test_a_star_search_1 --- PASSED")
+        csp = {
+            "landscape": self.landscape,
+            "tiles": self.tiles,
+            "targets": self.targets,
+            "variables": variables,
+            "arcs": arcs,
+            "domains": domains
+        }
 
-    def test_a_star_search_2(self):
-        pitchers = [3, 4, np.inf]
-        target_quantity = 1
-        steps = a_star_search(pitchers[:-1], target_quantity)
-        self.assertEqual(steps, -1)  # '-1' means Unsolvable/No Path
-        print("test_a_star_search_2 --- PASSED")
+        # Apply AC3 algorithm
+        result = ac3(csp)
+
+        # Check if AC3 successfully reduced the domains
+        self.assertTrue(result)  # AC3 should return True indicating possible consistency
+        for domain in csp["domains"].values():
+            # Assuming that domains should be reduced based on the constraints applied
+            self.assertLess(len(domain), len(tile_patterns.keys()))  # Domains should be reduced in size
 
 
 if __name__ == "__main__":
