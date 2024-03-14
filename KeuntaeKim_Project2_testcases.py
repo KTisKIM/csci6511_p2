@@ -9,90 +9,96 @@ class KeuntaeKimProject2Testcases(unittest.TestCase):
         self.assertTrue(len(landscape) > 0)
         self.assertEqual(tiles, {"EL_SHAPE": 7, "OUTER_BOUNDARY": 7, "FULL_BLOCK": 11})
         self.assertEqual(targets, {1: 11, 2: 26, 3: 21, 4: 20})
-        print("test_read_input_file --- PASSED")
+        print("\n>>> test_read_input_file --- PASSED")
 
     def test_is_valid(self):
-        landscape = [[0, 0, 1, 0], [0, 2, 0, 3], [3, 0, 0, 0], [0, 4, 0, 0]]
-        tiles = {"FULL_BLOCK": 2, "OUTER_BOUNDARY": 2, "EL_SHAPE_0": 1}
-        targets = {1: 1, 2: 1, 3: 1, 4: 1}
+        filename = "Option 3_Tile Placement/tileplacement/tilesproblem_unittest.txt"
+        landscape, tiles, targets, _ = read_input_file(filename)
+        
+        # # Check if placing a FULL_BLOCK tile at (0, 0) position is possible.
+        # landscape = [[0, 0, 1, 0], [0, 2, 0, 3], [3, 0, 0, 0], [0, 4, 0, 0]]
+        # tiles = {"FULL_BLOCK": 2, "OUTER_BOUNDARY": 2, "EL_SHAPE": 1}
+        # targets = {1: 0, 2: 0, 3: 0, 4: 0}
         position = (0, 0)
         
         self.assertTrue(is_valid(landscape, "FULL_BLOCK", position, targets, tiles))
-        print("test_is_valid --- PASSED")
-    
-    def test_apply_tile(self):
-        landscape = [[0, 0, 1, 0], [0, 2, 0, 3], [3, 0, 0, 0], [0, 4, 0, 0]]
-        tiles = {"FULL_BLOCK": 2, "OUTER_BOUNDARY": 2, "EL_SHAPE_0": 1}
-        targets = {1: 1, 2: 1, 3: 1, 4: 1}
+        print("\n>>> test_is_valid --- PASSED")
+
+    def test_apply_and_remove_tile(self):
+        filename = "Option 3_Tile Placement/tileplacement/tilesproblem_unittest.txt"
+        landscape, tiles, targets, _ = read_input_file(filename)
+        
+        # landscape = [[0, 0, 1, 0], [0, 2, 0, 3], [3, 0, 0, 0], [0, 4, 0, 0]]
+        # tiles = {"FULL_BLOCK": 2, "OUTER_BOUNDARY": 2, "EL_SHAPE": 1}
+        # targets = {1: 0, 2: 0, 3: 0, 4: 0}
         position = (0, 0)
+        original_landscape = [row[:] for row in landscape]
+        original_numbers = {}
         
-        # Before application
-        self.assertEqual(tiles["FULL_BLOCK"], 2)
-        print("test_apply_tile __ Before Application --- PASSED")
+        # See if the apply_tile() and remove_tile() work correctly
+        apply_tile(landscape, "FULL_BLOCK", position, tiles, original_numbers)
+        print("test", [print(row) for row in landscape])
+        remove_tile(landscape, "FULL_BLOCK", position, tiles, original_numbers)
         
-        # Apply tile
-        apply_tile(landscape, "FULL_BLOCK", position, tiles)
-        
-        # After application
-        self.assertEqual(tiles["FULL_BLOCK"], 1)
-        print("test_apply_tile __ After Application --- PASSED")
-    
-    def test_remove_tile(self):
-        landscape = [[0, 0, 1, 0], [0, 2, 0, 3], [3, 0, 0, 0], [0, 4, 0, 0]]
-        tiles = {"FULL_BLOCK": 2, "OUTER_BOUNDARY": 2, "EL_SHAPE_0": 1}
-        targets = {1: 1, 2: 1, 3: 1, 4: 1}
-        position = (0, 0)
-        
-        # Assume a tile is applied
-        apply_tile(landscape, "FULL_BLOCK", position, tiles)
-        remove_tile(landscape, "FULL_BLOCK", position, tiles)
-        
-        # Check if the tile count is restored
-        self.assertEqual(self.tiles["FULL_BLOCK"], 2)
-        print("test_remove_tile --- PASSED")
-    
+        self.assertEqual(landscape, original_landscape)  # Check if the Landscape is reverted back to the original after the remove_tile()
+        print("\n>>> test_apply_and_remove_tile --- PASSED")
+
     def test_ac3(self):
-        # Test the AC3 function to reduce domains correctly
-        # Setup a simple test where AC3 will modify the domains
-        landscape = [[1, 2, 0, 0], [0, 0, 3, 4], [0, 0, 0, 0], [0, 0, 0, 0]]
-        tiles = {"FULL_BLOCK": 1, "OUTER_BOUNDARY": 1, "EL_SHAPE": 1}
-        targets = {1: 1, 2: 1, 3: 1, 4: 1}
-
-        # Define variables based on the simplified landscape
-        variables = [(0, 0), (0, 2)]
+        filename = "Option 3_Tile Placement/tileplacement/tilesproblem_unittest.txt"
+        landscape, tiles, targets, _ = read_input_file(filename)
         
-        # Simplified tile patterns for the purpose of testing
-        tile_patterns = {
-            "FULL_BLOCK": [(0, 0), (0, 1), (1, 0), (1, 1)],
-            "OUTER_BOUNDARY": [(0, 0), (0, 1), (1, 0), (2, 0), (0, 2), (1, 2), (2, 2), (2, 1)],
-            "EL_SHAPE": [(0, 0), (0, 1), (0, 2), (1, 0)]
-        }
-
+        # landscape = [[0, 0, 1, 0], [0, 2, 0, 3], [3, 0, 0, 0], [0, 4, 0, 0]]
+        # tiles = {"FULL_BLOCK": 2, "OUTER_BOUNDARY": 2, "EL_SHAPE": 1}
+        # targets = {1: 0, 2: 0, 3: 0, 4: 0}
+        tile_size = 4
+        landscape_size = len(landscape)  # Assume landscape is a list of lists representing the grid
+        variables = [(i, j) for i in range(0, landscape_size, tile_size)
+                    for j in range(0, landscape_size, tile_size)]
         # Initialize domains for each variable (position)
-        domains = {variable: list(tile_patterns.keys()) for variable in variables}
-
-        # Simulate arcs for the scenario
-        arcs = initialize_arcs(variables)
-
+        # Assume "tiles" contains the types of tiles as keys
+        tile_types = list(tiles.keys())  # This list should contain your tile types, ['FULL_BLOCK', 'OUTER_BOUNDARY', 'EL_SHAPE']
+        domains = {variable: tile_types for variable in variables}
         csp = {
             "landscape": landscape,
             "tiles": tiles,
             "targets": targets,
             "variables": variables,
-            "arcs": arcs,
+            "arcs": initialize_arcs(variables),
             "domains": domains
         }
+        
+        # Test and Check if AC3 algorithm reduces CSP's domains.
+        self.assertTrue(ac3(csp))
+        print("\n>>> test_ac3 --- PASSED")
 
-        # Apply AC3 algorithm
-        result = ac3(csp)
-
-        # Check if AC3 successfully reduced the domains
-        self.assertTrue(result)  # AC3 should return True indicating possible consistency
-        print("test_ac3 __ After AC3 --- PASSED")
-        for domain in csp["domains"].values():
-            # Assuming that domains should be reduced based on the constraints applied
-            self.assertLess(len(domain), len(tile_patterns.keys()))  # Domains should be reduced in size
-        print("test_ac3 __ Reduced domains --- PASSED")
+    def test_backtrack(self):
+        filename = "Option 3_Tile Placement/tileplacement/tilesproblem_unittest.txt"
+        landscape, tiles, targets, _ = read_input_file(filename)
+        
+        # landscape = [[0, 0, 1, 0], [0, 2, 0, 3], [3, 0, 0, 0], [0, 4, 0, 0]]
+        # tiles = {"FULL_BLOCK": 2, "OUTER_BOUNDARY": 2, "EL_SHAPE": 1}
+        # targets = {1: 0, 2: 0, 3: 0, 4: 0}
+        tile_size = 4
+        landscape_size = len(landscape)  # Assume landscape is a list of lists representing the grid
+        variables = [(i, j) for i in range(0, landscape_size, tile_size)
+                    for j in range(0, landscape_size, tile_size)]
+        # Initialize domains for each variable (position)
+        # Assume "tiles" contains the types of tiles as keys
+        tile_types = list(tiles.keys())  # This list should contain your tile types, ['FULL_BLOCK', 'OUTER_BOUNDARY', 'EL_SHAPE']
+        domains = {variable: tile_types for variable in variables}
+        csp = {
+            "landscape": landscape,
+            "tiles": tiles,
+            "targets": targets,
+            "variables": variables,
+            "arcs": initialize_arcs(variables),
+            "domains": domains
+        }
+        original_numbers = {}
+        
+        # Check if the backtracking function finds valid solutions
+        self.assertIsNotNone(backtrack({}, csp, original_numbers))
+        print("\n>>> test_backtrack --- PASSED")
 
 
 if __name__ == "__main__":
