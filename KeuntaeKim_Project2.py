@@ -92,63 +92,6 @@ def read_input_file(filename):
 
     return landscape, tiles, targets, solution_key
 
-
-def is_valid(landscape, tile_type, position, targets, tiles):
-    """
-    Check if placing a tile at position is valid(overlaps with any other existing tile?) according to the landscape and constraints,
-    thus existing tile. This function considers the tile's shape, and check if the visibility of bushes
-    after placing this tile still meets the target requirements.
-    """
-    # Define the patterns for each tile type in terms of offsets from the top-left corner
-    tile_patterns = {
-        "FULL_BLOCK": [(d_x, d_y) for d_x in range(4) for d_y in range(4)],
-        "OUTER_BOUNDARY": [(d_x, d_y) for d_x in range(4) for d_y in range(4) if d_x in [0, 3] or d_y in [0, 3]],
-        "EL_SHAPE_0": [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (2, 0), (3, 0)],  # No rotate, original state
-        "EL_SHAPE_90": [(0, 0), (1, 0), (2, 0), (3, 0), (3, 1), (3, 2), (3, 3)], # Rotate 90 degree
-        "EL_SHAPE_180": [(3, 0), (3, 1), (3, 2), (3, 3), (0, 3), (1, 3), (2, 3)], # Rotate 180 degree
-        "EL_SHAPE_270": [(0, 0), (0, 1), (0, 2), (0, 3), (1, 3), (2, 3), (3, 3)]  # Rotate 270 degree
-    }
-    
-    pattern = tile_patterns[tile_type]  # Get the tile pattern for the given tile_type
-    max_row = len(landscape)
-    max_col = len(landscape[0]) if max_row > 0 else 0
-    
-    # Check landscape bounds and if the tile overlaps with other tiles or not
-    for d_x, d_y in pattern:
-        x, y = position[0] + d_x, position[1] + d_y
-        if x >= max_row or y >= max_col or landscape[x][y] == 9:
-            return False  # The tile goes out of bounds or overlaps another tile
-        
-    # Simulate tile placement to check visibility constraints
-    # Creating a shallow copy of landscape rows to simulate tile placement
-    simulate_landscape = [row[:] for row in landscape]
-    for d_x, d_y in pattern:
-        x, y = position[0] + d_x, position[1] + d_y
-        # Mark the tile position as '9' to indicate the tile covers this area
-        if 0 <= x < max_row and 0 <= y < max_col:
-            simulate_landscape[x][y] = 9
-    # print("맵을 좀 봐봐", [print(i) for i in simulate_landscape])  #TODO
-    
-    # Calculate visible bushes after simulated tile placement
-    visible_bushes = {bush: 0 for bush in targets}
-    for i, row in enumerate(simulate_landscape):
-        for j, cell in enumerate(row):
-            if cell in targets:
-                visible_bushes[cell] += 1
-                # print("보이는 수", visible_bushes)  #TODO
-    
-    # Check if the simulated placement meets the visibility requirements
-    for bush, num_visibility in targets.items():
-        if visible_bushes[bush] != num_visibility:
-            return False  # Placing the tile violates visibility requirements
-        
-    base_tile_type = tile_type.split("_")[0] + "_" + tile_type.split("_")[1]  # EL_SHAPE_90 -> EL_SHAPE
-    # If there's no left tile, then you can't place anymore
-    if tiles.get(base_tile_type, 0) <= 0:
-        return False
-
-    return True  # The placement is valid under all constraints
-
 def apply_tile(landscape, tile_type, position, tiles, original_numbers):
     """
     Place the tile on the landscape and update visibility accordingly
@@ -167,16 +110,21 @@ def apply_tile(landscape, tile_type, position, tiles, original_numbers):
     
     print("수정전타일", tiles)  #TODO
     # Get the pattern for the given tile_type
-    pattern = tile_patterns.get(tile_type, [])
+    pattern = tile_patterns[tile_type]
+    # print("이게 뭐냐???11", pattern)  #TODO
+    max_row = len(landscape)
+    max_col = len(landscape[0]) if max_row > 0 else 0
     
     # Apply the tile by setting the covered positions to a specific non-zero value
     for d_x, d_y in pattern:
         x, y = position[0] + d_x, position[1] + d_y
         # Check if the position is within the bounds of the landscape
-        if 0 <= x < len(landscape) and 0 <= y < len(landscape[0]):
+        if 0 <= x < max_row and 0 <= y < max_col:
             original_numbers[(x, y)] = landscape[x][y]  # Store the original numbers that were in the positions
             landscape[x][y] = 9  # Assume '9' indicates the presence of a tile
-            
+
+    print("디버그: 오리지널 넘버", original_numbers)  #TODO
+
     # Reduce the quantity of the corresponding tile type in tiles
     base_tile_type = tile_type.split("_")[0] + "_" + tile_type.split("_")[1]  # EL_SHAPE_90 -> EL_SHAPE
     tiles[base_tile_type] -= 1
@@ -199,7 +147,7 @@ def remove_tile(landscape, tile_type, position, tiles, original_numbers):
     }
     
     # Get the pattern for the given tile_type
-    pattern = tile_patterns.get(tile_type, [])
+    pattern = tile_patterns[tile_type]
     
     # Remove the tile by setting the covered positions back to what it was
     for d_x, d_y in pattern:
@@ -213,6 +161,67 @@ def remove_tile(landscape, tile_type, position, tiles, original_numbers):
     tiles[base_tile_type] += 1
 
     return landscape
+
+def is_valid(landscape, tile_type, position, targets, tiles):
+    """
+    Check if placing a tile at position is valid(overlaps with any other existing tile?) according to the landscape and constraints,
+    thus existing tile. This function considers the tile's shape, and check if the visibility of bushes
+    after placing this tile still meets the target requirements.
+    """
+    # Define the patterns for each tile type in terms of offsets from the top-left corner
+    tile_patterns = {
+        "FULL_BLOCK": [(d_x, d_y) for d_x in range(4) for d_y in range(4)],
+        "OUTER_BOUNDARY": [(d_x, d_y) for d_x in range(4) for d_y in range(4) if d_x in [0, 3] or d_y in [0, 3]],
+        "EL_SHAPE_0": [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (2, 0), (3, 0)],  # No rotate, original state
+        "EL_SHAPE_90": [(0, 0), (1, 0), (2, 0), (3, 0), (3, 1), (3, 2), (3, 3)], # Rotate 90 degree
+        "EL_SHAPE_180": [(3, 0), (3, 1), (3, 2), (3, 3), (0, 3), (1, 3), (2, 3)], # Rotate 180 degree
+        "EL_SHAPE_270": [(0, 0), (0, 1), (0, 2), (0, 3), (1, 3), (2, 3), (3, 3)]  # Rotate 270 degree
+    }
+    
+    pattern = tile_patterns[tile_type]  # Get the tile pattern for the given tile_type
+    # print("이게 뭐냐???2222", pattern)  #TODO
+    max_row = len(landscape)
+    max_col = len(landscape[0]) if max_row > 0 else 0
+    
+    # Check landscape bounds and if the tile overlaps with other tiles or not
+    for d_x, d_y in pattern:
+        x, y = position[0] + d_x, position[1] + d_y
+        if x >= max_row or y >= max_col or landscape[x][y] == 9:
+            return False  # The tile goes out of bounds or overlaps another tile
+        
+    # "Simulate" tile placement to check visibility constraints (=apply_tile(), but not using it here)
+    # Creating a shallow copy of landscape rows to simulate tile placement
+    simulate_landscape = [row[:] for row in landscape]
+    for d_x, d_y in pattern:
+        x, y = position[0] + d_x, position[1] + d_y
+        # Mark the tile position as '9' to indicate the tile covers this area
+        if 0 <= x < max_row and 0 <= y < max_col:
+            simulate_landscape[x][y] = 9
+    # print("맵을 좀 봐봐", [print(i) for i in simulate_landscape])  #TODO
+    
+    # Calculate visible bushes after simulated tile placement
+    visible_bushes = {bush: 0 for bush in targets}
+    for i, row in enumerate(simulate_landscape):
+        for j, cell in enumerate(row):
+            if cell in targets:
+                visible_bushes[cell] += 1
+                # print("보이는 수", visible_bushes)  #TODO
+                
+    # print("⭐️⭐️⭐️여기까지 오긴 옴")  #TODO
+    
+    # Check if the simulated placement meets the visibility requirements
+    for bush, num_visibility in targets.items():
+        if visible_bushes[bush] != num_visibility:
+            return False  # Placing the tile violates visibility requirements
+    
+    # print("⭐️⭐️⭐️여기도 오긴 왔다")  #TODO
+    
+    base_tile_type = tile_type.split("_")[0] + "_" + tile_type.split("_")[1]  # EL_SHAPE_90 -> EL_SHAPE
+    # If there's no left tile, then you can't place anymore
+    if tiles.get(base_tile_type, 0) <= 0:
+        return False
+
+    return True  # The placement is valid under all constraints
 
 def initialize_neighbors(variables, tile_size, landscape_size):
     neighbors = {}
@@ -248,9 +257,10 @@ def initialize_arcs(variables):
 
 def ac3(csp):  #TODO
     """
-    The AC3 algorithm for constraint propagation. Initialize queue with all arcs in the CSP.
-    For each arc, check for consistency and prune domain values, if needed.
-    Repeat this until no more pruning is possible or inconsistency is found.
+    The AC3 algorithm for constraint propagation(Algorithm based on the PPT slide).
+    Initialize queue with all arcs in the CSP. For each arc, check for consistency
+    and prune domain values, if needed. Repeat this until no more pruning is possible
+    or inconsistency is found.
     """
     queue = deque(csp["arcs"])  # Queue of all arcs, assume csp["arcs"] is a list of all arcs
     while queue:
@@ -296,14 +306,14 @@ def revise(csp, x_i, x_j):  #TODO
 
 def backtrack(assignment, csp, original_numbers):
     """
-    Backtracking search algorithm. It will use MRV and LCV
+    The most important one: Backtracking search algorithm. It will use MRV and LCV.
     """
     if len(assignment) == len(csp["variables"]):
         return assignment  # Return the assignment successfully
 
-    var = select_unassigned_variable(csp, assignment, original_numbers)
-    for value in order_domain_values(var, assignment, csp, original_numbers):            
-        print("디버그: 여기까지 왔다", value)  # TODO
+    var = select_unassigned_variable(csp, assignment, original_numbers)  # position
+    for value in order_domain_values(var, assignment, csp, original_numbers):  # Order of Tile Patterns type
+        print("디버그: 여기까지 왔다", value, var)  # TODO
         if is_valid(csp["landscape"], value, var, csp["targets"], csp["tiles"]):  # TODO, 이거 해결해야 함.
             print("여기까지 왔어!!! for루프 안쪽 if문 안쪽!")  #TODO
             apply_tile(csp['landscape'], value, var, csp["tiles"], original_numbers)
@@ -313,6 +323,7 @@ def backtrack(assignment, csp, original_numbers):
                 return result
             remove_tile(csp["landscape"], value, var, csp["tiles"], original_numbers)
             del assignment[var]
+    print("디버그: 작동안되고 여기까지 와버림", value, var)  # TODO
     return None
 
 def select_unassigned_variable(csp, assignment, original_numbers):
@@ -361,7 +372,7 @@ def select_unassigned_variable(csp, assignment, original_numbers):
     
     return min_variable
 
-def order_domain_values(var, assignment, csp, original_numbers):
+def order_domain_values(position, assignment, csp, original_numbers):
     """
     For LCV heuristic. For a given variable, order the values in its domain based on how many constraints they impose on other variables.
     """
@@ -377,7 +388,7 @@ def order_domain_values(var, assignment, csp, original_numbers):
             values.append(base_tile_type)
     
     # with Tie-Breaking Rules
-    order = sorted(values, key=lambda value: (count_constraints(csp["landscape"], value, var, csp["variables"], assignment, csp["tiles"], csp["targets"], original_numbers), # Number of constraints
+    order = sorted(values, key=lambda value: (count_constraints(csp["landscape"], value, position, csp["variables"], assignment, csp["tiles"], csp["targets"], original_numbers), # Number of constraints
                                               -csp["tiles"].get(value.split("_")[0], 0))) # Number of remaining tiles ("negative" numbers to sort in large order)
     
     return order
