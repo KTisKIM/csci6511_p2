@@ -60,12 +60,12 @@ def read_input_file(filename):
                         list_current_line.append(int(number))
                         was_previous_empty = False
                     else:  # when it's an empty space
-                        if not was_previous_empty:  # if previous was not empty space, this is the first empty
+                        if not was_previous_empty:  # If previous was not empty space, this is the first empty
                             was_previous_empty = True
                         elif number == "":
                             list_current_line.append(0)  # "0" here shows the empty spaces
-                            was_previous_empty = False  # reset the status after taking care of consecutive empty space
-                landscape.append(list_current_line)  # add the whole list(single line) to the landscape
+                            was_previous_empty = False  # Reset the status after taking care of consecutive empty space
+                landscape.append(list_current_line)  # Add the whole list(single line) to the landscape
             elif line and read_tiles:  ### Tiles
                 tiles_list = line.strip("{}").split(", ")
                 for tile in tiles_list:
@@ -209,8 +209,9 @@ def is_valid(landscape, tile_type, position, targets, tiles):
                 
     # print("⭐️⭐️⭐️여기까지 오긴 옴")  #TODO
     
-    # # Check if the simulated placement meets the visibility requirements  #TODO
+    # # Check if the simulated placement meets the visibility requirements  #TODO, 제일 해결해야 될 부분.
     # for bush, num_visibility in targets.items():
+    #     # print("디버그:") #TODO
     #     if visible_bushes[bush] != num_visibility:
     #         return False  # Placing the tile violates visibility requirements
     
@@ -224,6 +225,9 @@ def is_valid(landscape, tile_type, position, targets, tiles):
     return True  # The placement is valid under all constraints
 
 def initialize_neighbors(variables, tile_size, landscape_size):
+    """
+    Define the neighbors
+    """
     neighbors = {}
     
     for x_i in variables:
@@ -273,6 +277,9 @@ def ac3(csp):  #TODO
     return True
 
 def revise(csp, x_i, x_j):  #TODO
+    """
+    AC3 algirithm's helper function
+    """
     # Assume that "domains" is a dict with variables as keys and sets of values as domains
     revised = False
                 
@@ -281,19 +288,21 @@ def revise(csp, x_i, x_j):  #TODO
         # Assume "is_valid" checks for all necessary constraints including interactions with other variables
         # print("디버그디버그디버그:", x, csp["domains"][x_i])  #TODO
         if "EL_SHAPE" in x:  # Consider all directions of rotation
+            valid = False
             for rotation in ["0", "90", "180", "270"]:  # All Possible rotations
                 tile_type = f"{x}_{rotation}"  # "EL_SHAPE_0", "EL_SHAPE_90", etc...
-                if not is_valid(csp["landscape"], tile_type, x_i, csp["targets"], csp["tiles"]):  # TODO, 여기 해결해야 함.
-                    if len(csp["domains"][x_i]) == 0:
-                        break
+                if is_valid(csp["landscape"], tile_type, x_i, csp["targets"], csp["tiles"]):
+                    valid = True
+                    break
+            if not valid:  # TODO, 여기 해결해야 함.
+                if x in csp["domains"][x_i]:
+                    csp["domains"][x_i].remove(x)
+                    revised = True                
+        else:
+            if not is_valid(csp["landscape"], x, x_i, csp["targets"], csp["tiles"]):  # TODO, 여기도 마찬가지로 해결해야 함.
+                if x in csp["domains"][x_i]:
                     csp["domains"][x_i].remove(x)
                     revised = True
-        else:
-            if len(csp["domains"][x_i]) == 0:
-                break
-            if not is_valid(csp["landscape"], x, x_i, csp["targets"], csp["tiles"]):  # TODO, 여기도 마찬가지로 해결해야 함.
-                csp["domains"][x_i].remove(x)
-                revised = True
         
     return revised
 
@@ -304,11 +313,11 @@ def backtrack(assignment, csp, original_numbers):
     if len(assignment) == len(csp["variables"]):
         return assignment  # Return the assignment successfully
 
-    var = select_unassigned_variable(csp, assignment, original_numbers)  # position
+    var = select_unassigned_tile_spot(csp, assignment, original_numbers)  # position
     for value in order_domain_values(var, assignment, csp, original_numbers):  # Order of Tile Patterns type
         # print("디버그: 여기까지 왔다", value, var)  # TODO
         if is_valid(csp["landscape"], value, var, csp["targets"], csp["tiles"]):  # TODO, 이거 해결해야 함.
-            # print("여기까지 왔어!!! for루프 안쪽 if문 안쪽!")  #TODO
+            # print("여기까지 왔어!!! for루프 안쪽 if문 안쪽!", value, var)  #TODO
             apply_tile(csp['landscape'], value, var, csp["tiles"], original_numbers)
             assignment[var] = value
             result = backtrack(assignment, csp, original_numbers)
@@ -316,12 +325,14 @@ def backtrack(assignment, csp, original_numbers):
                 return result
             remove_tile(csp["landscape"], value, var, csp["tiles"], original_numbers)
             del assignment[var]
-    # print("디버그: 작동안되고 여기까지 와버림", value, var)  # TODO
+    
+    print("This means the backtracking didn't work out well.")
+    
     return None
 
-def select_unassigned_variable(csp, assignment, original_numbers):
+def select_unassigned_tile_spot(csp, assignment, original_numbers):
     """
-    MRV heuristic. Choose a variable with the Minimum Remaining Values in its domain that is not yet assigned.
+    MRV heuristic. Choose a tile spot(variable) with the Minimum Remaining Values in its domain that is not yet assigned.
     """
     unassigned_variables = [v for v in csp["variables"] if v not in assignment]  # variables that have not yet been assigned in the current assignment
     # Initialize the variable to return and its count of remaining values
@@ -357,7 +368,6 @@ def select_unassigned_variable(csp, assignment, original_numbers):
         if count < min_count:
             min_count = count
             min_variable = variable
-            # count_constraints(landscape, tile_type, position, variables, assignment, tiles, targets, original_numbers)
             least_constraints = local_least_constraints  # Update least_constraints for Tie-Breaking Rules
         # When there are the same MRV, apply the Tie-Breaking Rules
         elif count == min_count and local_least_constraints < least_constraints:
@@ -385,15 +395,17 @@ def order_domain_values(position, assignment, csp, original_numbers):
     # with Tie-Breaking Rules
     order = sorted(values, key=lambda value: (count_constraints(csp["landscape"], value, position, csp["variables"], assignment, csp["tiles"], csp["targets"], original_numbers), # Number of constraints
                                               -csp["tiles"].get(value.split("_")[0], 0))) # Number of remaining tiles ("negative" numbers to sort in large order)
-    
+
     return order
 
 def count_constraints(landscape, tile_type, position, variables, assignment, tiles, targets, original_numbers):
-    # A helper function to count how many constraints a tile choice imposes on other variables
-    # For simplicity, we count the number of places a tile cannot be placed as a result of choosing this tile_type at this position
+    """
+    Helper function for MRV and LCV heuristics to count how many constraints a tile choice imposes on other variables.
+    For simplicity, we count the number of places a tile cannot be placed as a result of choosing this tile_type at this position.
+    """
     constraints = 0
     
-    apply_tile(landscape, tile_type, position, tiles, original_numbers)  # Hypothetically place the tile
+    apply_tile(landscape, tile_type, position, tiles, original_numbers)  # "Hypothetically" place the tile
     
     for variable in variables:
         if variable not in assignment:
@@ -408,7 +420,7 @@ def count_constraints(landscape, tile_type, position, variables, assignment, til
                 if tiles.get(tile_type, 0) > 0 and not is_valid(landscape, tile_type, variable, targets, tiles):
                     constraints += 1
                     
-    remove_tile(landscape, tile_type, position, tiles, original_numbers)  # Remove the hypothetical tile
+    remove_tile(landscape, tile_type, position, tiles, original_numbers)  # Remove the "hypothetical" tile
     
     return constraints
 
@@ -456,11 +468,10 @@ if __name__ == "__main__":
     if ac3(csp):
         assignment = {}
         solution = backtrack(assignment, csp, original_numbers)
-        # print("⭐️⭐️⭐️ 여기ㄱ는?")  #TODO
         if solution is not None:
-            print("Solution found:", solution)
+            print("Solution found!\n>>>>>\n", solution)
         else:
-            print("No solution exists.")
+            print("*****NO solution exists!*****")
     else:
-        print("No solution can be found.")
+        print("*****ALERT: NO solution can be found!*****")
         

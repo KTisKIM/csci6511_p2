@@ -38,7 +38,7 @@ class KeuntaeKimProject2Testcases(unittest.TestCase):
         }
         original_numbers = {}
         assignment = {}
-        position = select_unassigned_variable(csp, assignment, original_numbers)  # position
+        position = select_unassigned_tile_spot(csp, assignment, original_numbers)  # position
         # print("이거 뭐지", position)  # TODO
         
         original_landscape = [row[:] for row in landscape]
@@ -81,7 +81,7 @@ class KeuntaeKimProject2Testcases(unittest.TestCase):
         }
         original_numbers = {}
         assignment = {}
-        position = select_unassigned_variable(csp, assignment, original_numbers)  # position
+        position = select_unassigned_tile_spot(csp, assignment, original_numbers)  # position
         
         self.assertTrue(is_valid(landscape, "FULL_BLOCK", position, targets, tiles))
         print("\n>>>>> test_is_valid --- PASSED")
