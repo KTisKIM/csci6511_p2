@@ -39,7 +39,7 @@ class KeuntaeKimProject2Testcases(unittest.TestCase):
         original_numbers = {}
         assignment = {}
         position = select_unassigned_variable(csp, assignment, original_numbers)  # position
-        print("이거 뭐지", position)  # TODO
+        # print("이거 뭐지", position)  # TODO
         
         original_landscape = [row[:] for row in landscape]
         
