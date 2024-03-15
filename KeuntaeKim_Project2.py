@@ -108,7 +108,7 @@ def apply_tile(landscape, tile_type, position, tiles, original_numbers):
         "EL_SHAPE_270": [(0, 0), (0, 1), (0, 2), (0, 3), (1, 3), (2, 3), (3, 3)]  # Rotate 270 degree
     }
     
-    print("수정전타일", tiles)  #TODO
+    # print("수정전타일", tiles)  #TODO
     # Get the pattern for the given tile_type
     pattern = tile_patterns[tile_type]
     # print("이게 뭐냐???11", pattern)  #TODO
@@ -123,12 +123,12 @@ def apply_tile(landscape, tile_type, position, tiles, original_numbers):
             original_numbers[(x, y)] = landscape[x][y]  # Store the original numbers that were in the positions
             landscape[x][y] = 9  # Assume "9" indicates the presence of a tile
 
-    print("디버그: 오리지널 넘버", original_numbers)  #TODO
+    # print("디버그: 오리지널 넘버", original_numbers)  #TODO
 
     # Reduce the quantity of the corresponding tile type in tiles
     base_tile_type = tile_type.split("_")[0] + "_" + tile_type.split("_")[1]  # EL_SHAPE_90 -> EL_SHAPE
     tiles[base_tile_type] -= 1
-    print("타일", tiles)  #TODO
+    # print("타일", tiles)  #TODO
 
 def remove_tile(landscape, tile_type, position, tiles, original_numbers):
     """
@@ -189,7 +189,7 @@ def is_valid(landscape, tile_type, position, targets, tiles):
         if x >= max_row or y >= max_col or landscape[x][y] == 9:
             return False  # The tile goes out of bounds or overlaps another tile
         
-    # "Simulate" tile placement to check visibility constraints (=apply_tile(), but not using it here)
+    # "Simulate" tile placement to check visibility constraints (=apply_tile(), but not directly using it here not to affect the original)
     # Creating a shallow copy of landscape rows to simulate tile placement
     simulate_landscape = [row[:] for row in landscape]
     for d_x, d_y in pattern:
@@ -205,7 +205,7 @@ def is_valid(landscape, tile_type, position, targets, tiles):
         for j, cell in enumerate(row):
             if cell in targets:
                 visible_bushes[cell] += 1
-                print("⭐️⭐️⭐️보이는 수", visible_bushes)  #TODO
+                # print("⭐️⭐️⭐️보이는 수", visible_bushes)  #TODO
                 
     # print("⭐️⭐️⭐️여기까지 오긴 옴")  #TODO
     
@@ -279,7 +279,7 @@ def revise(csp, x_i, x_j):  #TODO
     for x in set(csp["domains"][x_i]):  # Create a copy to iterate over since we might modify the domain
         # Check if the placement of "x" at "x_i" violates any constraints
         # Assume "is_valid" checks for all necessary constraints including interactions with other variables
-        print("디버그디버그디버그:", x, csp["domains"][x_i])  #TODO
+        # print("디버그디버그디버그:", x, csp["domains"][x_i])  #TODO
         if "EL_SHAPE" in x:  # Consider all directions of rotation
             for rotation in ["0", "90", "180", "270"]:  # All Possible rotations
                 tile_type = f"{x}_{rotation}"  # "EL_SHAPE_0", "EL_SHAPE_90", etc...
@@ -306,9 +306,9 @@ def backtrack(assignment, csp, original_numbers):
 
     var = select_unassigned_variable(csp, assignment, original_numbers)  # position
     for value in order_domain_values(var, assignment, csp, original_numbers):  # Order of Tile Patterns type
-        print("디버그: 여기까지 왔다", value, var)  # TODO
+        # print("디버그: 여기까지 왔다", value, var)  # TODO
         if is_valid(csp["landscape"], value, var, csp["targets"], csp["tiles"]):  # TODO, 이거 해결해야 함.
-            print("여기까지 왔어!!! for루프 안쪽 if문 안쪽!")  #TODO
+            # print("여기까지 왔어!!! for루프 안쪽 if문 안쪽!")  #TODO
             apply_tile(csp['landscape'], value, var, csp["tiles"], original_numbers)
             assignment[var] = value
             result = backtrack(assignment, csp, original_numbers)
@@ -316,7 +316,7 @@ def backtrack(assignment, csp, original_numbers):
                 return result
             remove_tile(csp["landscape"], value, var, csp["tiles"], original_numbers)
             del assignment[var]
-    print("디버그: 작동안되고 여기까지 와버림", value, var)  # TODO
+    # print("디버그: 작동안되고 여기까지 와버림", value, var)  # TODO
     return None
 
 def select_unassigned_variable(csp, assignment, original_numbers):
@@ -339,7 +339,7 @@ def select_unassigned_variable(csp, assignment, original_numbers):
                 for rotation in ["0", "90", "180", "270"]:  # All Possible rotations
                     tile_type = f"{base_tile_type}_{rotation}"  # "EL_SHAPE_0", "EL_SHAPE_90", etc...
                     if csp["tiles"][base_tile_type] > 0 and is_valid(csp["landscape"], tile_type, variable, csp["targets"], csp["tiles"]):  # TODO, 여기도 해결해야.
-                        print("들어오니????") #TODO
+                        # print("들어오니????") #TODO
                         count += 1
                         # Calculate constraints for this tile placement
                         constraints = count_constraints(csp["landscape"], tile_type, variable, csp["variables"], assignment, csp["tiles"], csp["targets"], original_numbers)
@@ -347,7 +347,7 @@ def select_unassigned_variable(csp, assignment, original_numbers):
             else:
                 # If it's not "EL_SHAPE" (not rotatable)
                 if csp["tiles"][base_tile_type] > 0 and is_valid(csp["landscape"], base_tile_type, variable, csp["targets"], csp["tiles"]):  # TODO, 여기도 해결해야.
-                    print("들어오니????") #TODO
+                    # print("들어오니????") #TODO
                     count += 1
                     # Calculate constraints for this tile placement
                     constraints = count_constraints(csp["landscape"], base_tile_type, variable, csp["variables"], assignment, csp["tiles"], csp["targets"], original_numbers)
@@ -456,6 +456,7 @@ if __name__ == "__main__":
     if ac3(csp):
         assignment = {}
         solution = backtrack(assignment, csp, original_numbers)
+        # print("⭐️⭐️⭐️ 여기ㄱ는?")  #TODO
         if solution is not None:
             print("Solution found:", solution)
         else:

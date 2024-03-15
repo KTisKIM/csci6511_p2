@@ -43,12 +43,12 @@ class KeuntaeKimProject2Testcases(unittest.TestCase):
         
         original_landscape = [row[:] for row in landscape]
         
-        print("before apply tile", [print(row) for row in landscape])  # TODO
+        # print("before apply tile", [print(row) for row in landscape])  # TODO
         # See if the apply_tile() and remove_tile() work correctly
         apply_tile(landscape, "FULL_BLOCK", position, tiles, original_numbers)
-        print("after apply tile", [print(row) for row in landscape])  # TODO
+        # print("after apply tile", [print(row) for row in landscape])  # TODO
         remove_tile(landscape, "FULL_BLOCK", position, tiles, original_numbers)
-        print("after remove tile", [print(row) for row in landscape])  # TODO
+        # print("after remove tile", [print(row) for row in landscape])  # TODO
         
         self.assertEqual(landscape, original_landscape)  # Check if the Landscape is reverted back to the original after the remove_tile()
         print("\n>>>>> test_apply_and_remove_tile --- PASSED")
@@ -93,6 +93,7 @@ class KeuntaeKimProject2Testcases(unittest.TestCase):
         # landscape = [[0, 0, 1, 0], [0, 2, 0, 3], [3, 0, 0, 0], [0, 4, 0, 0]]
         # tiles = {"FULL_BLOCK": 2, "OUTER_BOUNDARY": 2, "EL_SHAPE": 1}
         # targets = {1: 0, 2: 0, 3: 0, 4: 0}
+        
         tile_size = 4
         landscape_size = len(landscape)  # Assume landscape is a list of lists representing the grid
         variables = [(i, j) for i in range(0, landscape_size, tile_size)
@@ -121,6 +122,7 @@ class KeuntaeKimProject2Testcases(unittest.TestCase):
         # landscape = [[0, 0, 1, 0], [0, 2, 0, 3], [3, 0, 0, 0], [0, 4, 0, 0]]
         # tiles = {"FULL_BLOCK": 2, "OUTER_BOUNDARY": 2, "EL_SHAPE": 1}
         # targets = {1: 0, 2: 0, 3: 0, 4: 0}
+        
         tile_size = 4
         landscape_size = len(landscape)  # Assume landscape is a list of lists representing the grid
         variables = [(i, j) for i in range(0, landscape_size, tile_size)
