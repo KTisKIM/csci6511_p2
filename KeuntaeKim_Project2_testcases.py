@@ -83,7 +83,7 @@ class KeuntaeKimProject2Testcases(unittest.TestCase):
         assignment = {}
         position = select_unassigned_tile_spot(csp, assignment, original_numbers)  # position
         
-        self.assertTrue(is_valid(landscape, "FULL_BLOCK", position, targets, tiles))
+        self.assertTrue(is_valid(landscape, "FULL_BLOCK", position, tiles))
         print("\n>>>>> test_is_valid --- PASSED")
 
     def test_ac3(self):
