@@ -458,7 +458,7 @@ if __name__ == "__main__":
         solution = backtrack(assignment, csp, original_numbers)
         print("COMPLETED! --- Tiles:", original_num_tiles)
         if solution is not None:
-            print("Solution found!\n>>>>>\n", {position_tile for position_tile in solution})
+            print("Solution found!\n>>>>>\n", solution)
         else:
             print("*****NO solution exists!*****")
     else:
